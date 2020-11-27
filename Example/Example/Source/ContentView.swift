@@ -56,7 +56,7 @@ struct ContentView: View {
                         SwipableContentView {
                             ItemView(content: contentData[index])
                                 .if(contentData[index].configurations != nil) {
-                                    $0.onSwipe(.trailing, configurations: contentData[index].configurations!)
+                                    $0.onTrailingSwipe(configurations: contentData[index].configurations!)
                                 }
                         }
                     }

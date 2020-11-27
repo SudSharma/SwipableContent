@@ -53,23 +53,12 @@ public struct SwipableContentView<Content: View>: View {
                     
                 case .right:
                     if value.translation.width > 0 {
-                        withAnimation(.spring()) {
-                            if contentOffset - value.translation.width >= 0 {
-                                contentOffset -= value.translation.width
-                            }
-                            
-                            if contentOffset < 0 {
-                                if let trailingContextualViewConfigurations = self.trailingContextualViewConfigurations {
-                                    for index in 1..<trailingContextualViewConfigurations.count {
-                                        let contextualViewConfiguration = trailingContextualViewConfigurations[index - 1]
-                                        if contextualViewConfiguration.contentWidth - (-contentOffset) >= 0 {
-                                            contextualViewConfiguration.contentWidth -= -contentOffset
-                                        }
-                                    }
+                        if contentOffset < 0 {
+                            if let trailingContextualViewConfigurations = self.trailingContextualViewConfigurations {
+                                contentOffset += (value.translation.width / CGFloat(trailingContextualViewConfigurations.count))
+                                for index in 0..<trailingContextualViewConfigurations.count {
+                                    trailingContextualViewConfigurations[index].contentWidth = abs(contentOffset) / CGFloat(trailingContextualViewConfigurations.count)
                                 }
-                            }
-                            else if value.translation.width < 10 {
-                                contentOffset = value.translation.width
                             }
                         }
                     }
@@ -138,6 +127,9 @@ public struct SwipableContentView<Content: View>: View {
     // Perform leading most or trailing most action on full swipe
     @State private var isFullSwipe = false
     
+    // Configurations for leading contextual views
+    @State private var leadingContextualViewConfigurations: [ContextualViewConfiguration]?
+    
     // Width of single contextual view
     private var maxContextualViewWidth: CGFloat = 80.0
     
@@ -190,12 +182,18 @@ public struct SwipableContentView<Content: View>: View {
                 .frame(width: UIScreen.main.bounds.size.width, alignment: .leading)
                 .offset(x: contentOffset)
         }
-        .onPreferenceChange(ContextualViewPreferenceKey.self) { value in
+        .onPreferenceChange(TrailingContextualViewPreferenceKey.self) { value in
             if trailingContextualViewConfigurations == nil {
                 trailingContextualViewConfigurations = value
             }
         }
-        .if(trailingContextualViewConfigurations?.count ?? 0 > 0) {
+        .onPreferenceChange(LeadingContextualViewPreferenceKey.self) { value in
+            if leadingContextualViewConfigurations == nil {
+                leadingContextualViewConfigurations = value
+            }
+        }
+        .if(trailingContextualViewConfigurations?.count ?? 0 > 0 ||
+                leadingContextualViewConfigurations?.count ?? 0 > 0) {
             $0.gesture(dragGesture)
         }
     }
